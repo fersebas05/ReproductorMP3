@@ -1,7 +1,5 @@
 package ReproductorNuevo;
 
-import java.io.File;
-
 import Recursos.NodoDoble;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -10,33 +8,29 @@ public class ReproductorMP3 {
     private NodoDoble nodoActual;
     private ListaCanciones playlist;
     private MediaPlayer mediaPlayer;
-    private boolean reproduciendo;
-    private boolean pausado;
 
     public ReproductorMP3() {
         this.nodoActual = null;
         this.playlist = new ListaCanciones();
         this.mediaPlayer = null;
-        this.reproduciendo = false;
-        this.pausado = false;
     }
     
     public void agregarCancion(Cancion cancion) {
         this.playlist.insertar(cancion, this.playlist.tamanio());
-        // if(nodoActual == null) {
-        //     nodoActual = this.playlist.getFrenteL();
-        // }
+        cargarCancionActual(cancion);
     }
 
     public void reproducir() {
+        if(this.nodoActual == null) {
+            this.nodoActual = this.playlist.getFrenteL();
+        }
+        
         Cancion cancion = (Cancion) nodoActual.getNodoInfo();
         if(cancion != null) {
             if(this.mediaPlayer == null) {
                 cargarCancionActual(cancion);
             }
             this.mediaPlayer.play();
-            this.reproduciendo = true;
-            this.pausado = false;
         }
         else {
             System.out.println("No hay cancion para reproducir");
@@ -51,14 +45,30 @@ public class ReproductorMP3 {
     //     if(this.nodoActual != null) {
     //         Cancion cancion = (Cancion) this.nodoActual.getNodoInfo();
 
+    //         System.out.println("Reproduciendo " + cancion);
+
+    //         try {
+    //             if(this.mediaPlayer != null) { 
+    //                 this.mediaPlayer.stop();
+    //                 this.mediaPlayer.dispose();
+    //                 this.mediaPlayer = null;
+    //             }
+    //             Media media = new Media(cancion.getRuta());
+    //             mediaPlayer = new MediaPlayer(media);
+
+    //             mediaPlayer.play();
+
+    //         } catch(Exception e) {
+    //             System.out.println("Error al cargar la cancion por: " +  e.getMessage().toString());
+    //             this.mediaPlayer = null;
+    //         }
     //     }
     // }
 
     //Carga el MediaPlayer de forma segura aislando fallos de lectura o metadatos.
-    private void cargarCancionActual(Cancion cancionActual) {
+    private void cargarCancionActual(Cancion cancion) {
         try {
-            File archivo = new File(cancionActual.getRuta());
-            Media media = new Media(archivo.toURI().toString()); 
+            Media media = new Media(cancion.getRuta()); 
             this.mediaPlayer = new MediaPlayer(media);
 
             // Al terminar de reproducirse, pasa de manera natural a la siguiente
@@ -69,8 +79,6 @@ public class ReproductorMP3 {
         } catch (Exception e) {
             System.err.println("Error al cargar los metadatos o el archivo de audio: " + e.getMessage());
             this.mediaPlayer = null;
-            this.reproduciendo = true;
-            this.pausado = false;
         }
     }
 
@@ -80,44 +88,39 @@ public class ReproductorMP3 {
     }
 
     public void pausar() {
-        if (this.mediaPlayer != null && this.reproduciendo) {
+        if (this.mediaPlayer != null) {
             this.mediaPlayer.pause();
-            this.pausado = true;
-            this.reproduciendo = false;
         }
     }
 
     public void detener() {
         if (this.mediaPlayer != null) {
             this.mediaPlayer.stop();
-            this.mediaPlayer.dispose();
-            this.mediaPlayer = null;
-            this.reproduciendo = false;
-            this.pausado = false;
         }
     }
 
     public void siguiente() {
-        if (this.nodoActual != null) {
-            this.detener();
+        if(this.nodoActual != null && this.nodoActual.getNextNodo() != null) {
             this.nodoActual = this.nodoActual.getNextNodo();
-
-            if (this.nodoActual != null) {
-                this.reproducir(); //Si es null, simplemente no hacemos nada (se queda detenido)
-            }
+            reproducir();
+        }
+        else {
+            System.out.println("No hay cancion siguiente a reproducir...");
         }
     }
 
     public void anterior() {
-        if (this.nodoActual != null) {
-            this.detener();
+        if (this.nodoActual != null && this.nodoActual.getPrevNodo() != null) {
             this.nodoActual = this.nodoActual.getPrevNodo();
-            
-            //Si es null, la reproducción se detiene aquí
-            if (this.nodoActual != null) {
-                this.reproducir();
-            }
+            reproducir();
         }
+        else{
+            System.out.println("No hay cancion anterior a reproducir...");
+        }
+    }
+
+    public int cantidadCanciones() {
+        return this.playlist.tamanio();
     }
 
 }
